@@ -29,7 +29,7 @@ type AddSSHKeyResponseGitLab struct {
 	UsageType string `json:"usage_type"`
 }
 
-func (provider GitLabProvider) AddSSHKey(publicKeyBytes []byte, title string, accessToken string) (int, error) {
+func (provider GitLabProvider) AddSSHKey(publicKeyBytes []byte, title string, accessToken string, client *http.Client) (int, error) {
 	var keyId int
 	var err error
 
@@ -45,7 +45,6 @@ func (provider GitLabProvider) AddSSHKey(publicKeyBytes []byte, title string, ac
 
 	// Construct POST request
 	// From: https://golangnote.com/request/sending-post-request-in-golang-with-header
-	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, bodyBuffer)
 	if err != nil {
 		return keyId, err
@@ -73,7 +72,7 @@ func (provider GitLabProvider) AddSSHKey(publicKeyBytes []byte, title string, ac
 	return responseBody.Id, err
 }
 
-func (provider GitLabProvider) RemoveSSHKey(keyId int, accessToken string) (bool, error) {
+func (provider GitLabProvider) RemoveSSHKey(keyId int, accessToken string, client *http.Client) (bool, error) {
 	var success bool = false
 	var err error
 
@@ -81,7 +80,6 @@ func (provider GitLabProvider) RemoveSSHKey(keyId int, accessToken string) (bool
 
 	// Construct POST request
 	// From: https://www.golangprograms.com/how-do-you-send-an-http-delete-request-in-go.html
-	client := &http.Client{}
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return success, err

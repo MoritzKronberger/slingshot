@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"slingshot/git"
 	"slingshot/ssh"
@@ -116,8 +117,11 @@ func testGitProviderSSH(provider git.GitProvider, accessToken string) {
 	log.Print("Successfully generated new key pair")
 	log.Print("Adding new public key to Git provider...")
 
+	// Create HTTP client
+	client := &http.Client{}
+
 	// Add to Git provider
-	keyId, err := provider.AddSSHKey(publicKeyBytes, "slingshot", accessToken)
+	keyId, err := provider.AddSSHKey(publicKeyBytes, "slingshot", accessToken, client)
 	exitOnError("Unable to add SSH key to Git provider:", err)
 
 	log.Print("Successfully added new public key to Git provider")
@@ -127,7 +131,7 @@ func testGitProviderSSH(provider git.GitProvider, accessToken string) {
 	log.Print("Removing public key from Git provider...")
 
 	// Remove key from Git provider
-	success, err := provider.RemoveSSHKey(keyId, accessToken)
+	success, err := provider.RemoveSSHKey(keyId, accessToken, client)
 	exitOnError("Could not remove SSH key from Git provider:", err)
 
 	log.Print(success)
