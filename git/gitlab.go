@@ -72,3 +72,33 @@ func (provider GitLabProvider) AddSSHKey(publicKeyBytes []byte, title string, ac
 
 	return responseBody.Id, err
 }
+
+func (provider GitLabProvider) RemoveSSHKey(keyId int, accessToken string) (bool, error) {
+	var success bool = false
+	var err error
+
+	url := fmt.Sprintf("https://gitlab.com/api/v4/user/keys/%d", keyId)
+
+	// Construct POST request
+	// From: https://www.golangprograms.com/how-do-you-send-an-http-delete-request-in-go.html
+	client := &http.Client{}
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return success, err
+	}
+
+	// Add request headers
+	req.Header.Add("Private-Token", accessToken)
+
+	// Execute delete SSH key request
+	res, err := client.Do(req)
+	if err != nil {
+		return success, err
+	}
+	defer res.Body.Close()
+
+	// Determine delete success
+	success = res.StatusCode == 204
+
+	return success, err
+}

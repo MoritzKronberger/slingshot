@@ -127,10 +127,10 @@ func testGitProviderSSH(provider git.GitProvider, accessToken string) {
 	log.Print("Removing public key from Git provider...")
 
 	// Remove key from Git provider
-	status, err := provider.RemoveSSHKey(keyId, accessToken)
+	success, err := provider.RemoveSSHKey(keyId, accessToken)
 	exitOnError("Could not remove SSH key from Git provider:", err)
 
-	log.Print(status)
+	log.Print(success)
 }
 
 func main() {
