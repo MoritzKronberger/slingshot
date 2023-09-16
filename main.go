@@ -94,7 +94,7 @@ func testSHH(){
 func testGitHub() {
 	// GitHub config
 	godotenv.Load()
-	gitHubAccessToken := os.Getenv("GITHUB_ACCESS_TOKEN")
+	gitHubAccessToken := os.Getenv("GITLAB_ACCESS_TOKEN")
 
 	// Generate new SSH key pair for GitHub
 	privateKeyPath := "./id_rsa_github"
@@ -121,7 +121,7 @@ func testGitHub() {
 	log.Print("Adding new public key to GitHub...")
 
 	// Add to GitHub
-	keyId, err := git.AddSSHKey(publicKeyBytes, "slingshot", gitHubAccessToken)
+	keyId, err := git.AddSSHKeyGitLab(publicKeyBytes, "slingshot", gitHubAccessToken)
 	exitOnError("Unable to add SSH key to GitHub:", err)
 
 	log.Print("Successfully added new public key to GitHub")

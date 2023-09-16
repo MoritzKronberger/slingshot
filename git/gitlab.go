@@ -8,24 +8,24 @@ import (
 	"strings"
 )
 
-// GitHub SSH key API
-// https://docs.github.com/en/rest/users/keys?apiVersion=2022-11-28
+// GitLab SSH key (POST) API (missing from official docs)
+// https://stackoverflow.com/a/38164825
+// https://stackoverflow.com/questions/63551637/how-to-add-ssh-key-to-gitlab-via-api
 
-type AddSSHKeyResponseGitHub struct {
+type AddSSHKeyResponseGitLab struct {
 	Key string `json:"key"`
 	Id int `json:"id"`
-	URL string `json:"url"`
 	Title string `json:"title"`
 	CreatedAt string `json:"created_at"`
-	Verified bool `json:"verified"`
-	ReadOnly bool `json:"read_only"`
+	ExpiresAt string `json:"expires_at"`
+	UsageType string `json:"usage_type"`
 }
 
-func AddSSHKeyGitHub(publicKeyBytes []byte, title string, accessToken string) (int, error) {
+func AddSSHKeyGitLab(publicKeyBytes []byte, title string, accessToken string) (int, error) {
 	var keyId int
 	var err error
 
-	url := "https://api.github.com/user/keys"
+	url := "https://gitlab.com/api/v4/user/keys"
 	contentType := "application/json"
 
 	// Create request body and encode as buffer
@@ -43,14 +43,9 @@ func AddSSHKeyGitHub(publicKeyBytes []byte, title string, accessToken string) (i
 		return keyId, err
 	}
 
-	// Format access token header
-	accessTokenHeader := fmt.Sprintf("Bearer %s", accessToken)
-
 	// Add request headers
 	req.Header.Add("Content-Type", contentType)
-	req.Header.Add("Authorization", accessTokenHeader)
-	req.Header.Add("Accept", "application/vnd.github+json")
-	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
+	req.Header.Add("Private-Token", accessToken)
 
 	// Execute add SSH key request
 	res, err := client.Do(req)
@@ -61,7 +56,7 @@ func AddSSHKeyGitHub(publicKeyBytes []byte, title string, accessToken string) (i
 
 	// Read response body -> Get key id
 	// From: https://stackoverflow.com/a/31129967
-	responseBody := &AddSSHKeyResponseGitHub{}
+	responseBody := &AddSSHKeyResponseGitLab{}
 	err = json.NewDecoder(res.Body).Decode(responseBody)
 	if err != nil {
 		return keyId, err
