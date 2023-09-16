@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slingshot/git"
 	"slingshot/ssh"
 
 	"github.com/joho/godotenv"
@@ -16,7 +17,7 @@ func exitOnError(msg string, err error) {
 	}
 }
 
-func main() {
+func testSHH(){
 	// SSH config
 	godotenv.Load()
 	host := os.Getenv("REMOTE_HOST")
@@ -88,4 +89,46 @@ func main() {
 	exitOnError("Unable to execute command:", err)
 
 	fmt.Println(res)
+}
+
+func testGitHub() {
+	// GitHub config
+	godotenv.Load()
+	gitHubAccessToken := os.Getenv("GITHUB_ACCESS_TOKEN")
+
+	// Generate new SSH key pair for GitHub
+	privateKeyPath := "./id_rsa_github"
+	publicKeyPath := "./id_rsa_github.pub"
+	keyBitSize := 4096
+
+	// Generate private key
+	privateKey, err := ssh.GeneratePrivateKey(keyBitSize)
+	exitOnError("Unable to generate private key:", err)
+
+	// Encode private key as PEM -> get bytes
+	privateKeyBytes := ssh.PrivateKeyToPEM(privateKey)
+
+	// Generate public key
+	publicKey, err := ssh.GeneratePublicKey(privateKey)
+	exitOnError("Unable to generate public key:", err)
+	publicKeyBytes := ssh.PublicKeyToBytes(publicKey)
+
+	// Write key pair to disk
+	ssh.WriteKeyToFile(privateKeyBytes, privateKeyPath)
+	ssh.WriteKeyToFile(publicKeyBytes, publicKeyPath)
+
+	log.Print("Successfully generated new key pair")
+	log.Print("Adding new public key to GitHub...")
+
+	// Add to GitHub
+	keyId, err := git.AddSSHKey(publicKeyBytes, "slingshot", gitHubAccessToken)
+	exitOnError("Unable to add SSH key to GitHub:", err)
+
+	log.Print("Successfully added new public key to GitHub")
+
+	fmt.Println(keyId)
+}
+
+func main() {
+	testGitHub()
 }
