@@ -77,3 +77,38 @@ func (provider GitHubProvider) AddSSHKey(publicKeyBytes []byte, title string, ac
 
 	return responseBody.Id, err
 }
+
+func (provider GitHubProvider) RemoveSSHKey(keyId int, accessToken string) (int, error) {
+	var status int
+	var err error
+
+	url := fmt.Sprintf("https://api.github.com/user/keys/%d", keyId)
+
+	// Construct POST request
+	// From: https://www.golangprograms.com/how-do-you-send-an-http-delete-request-in-go.html
+	client := &http.Client{}
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return status, err
+	}
+
+	// Format access token header
+	accessTokenHeader := fmt.Sprintf("Bearer %s", accessToken)
+
+	// Add request headers
+	req.Header.Add("Authorization", accessTokenHeader)
+	req.Header.Add("Accept", "application/vnd.github+json")
+	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
+
+	// Execute add SSH key request
+	res, err := client.Do(req)
+	if err != nil {
+		return status, err
+	}
+	defer res.Body.Close()
+
+	// Read response status
+	status = res.StatusCode
+
+	return status, err
+}

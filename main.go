@@ -92,9 +92,9 @@ func testSHH(){
 }
 
 func testGitProviderSSH(provider git.GitProvider, accessToken string) {
-	// Generate new SSH key pair for GitHub
-	privateKeyPath := "./id_rsa_github"
-	publicKeyPath := "./id_rsa_github.pub"
+	// Generate new SSH key pair for Git provider
+	privateKeyPath := "./id_rsa_git"
+	publicKeyPath := "./id_rsa_git.pub"
 	keyBitSize := 4096
 
 	// Generate private key
@@ -114,15 +114,23 @@ func testGitProviderSSH(provider git.GitProvider, accessToken string) {
 	ssh.WriteKeyToFile(publicKeyBytes, publicKeyPath)
 
 	log.Print("Successfully generated new key pair")
-	log.Print("Adding new public key to GitHub...")
+	log.Print("Adding new public key to Git provider...")
 
-	// Add to GitHub
+	// Add to Git provider
 	keyId, err := provider.AddSSHKey(publicKeyBytes, "slingshot", accessToken)
-	exitOnError("Unable to add SSH key to GitHub:", err)
+	exitOnError("Unable to add SSH key to Git provider:", err)
 
-	log.Print("Successfully added new public key to GitHub")
+	log.Print("Successfully added new public key to Git provider")
 
 	fmt.Println(keyId)
+
+	log.Print("Removing public key from Git provider...")
+
+	// Remove key from Git provider
+	status, err := provider.RemoveSSHKey(keyId, accessToken)
+	exitOnError("Could not remove SSH key from Git provider:", err)
+
+	log.Print(status)
 }
 
 func main() {
