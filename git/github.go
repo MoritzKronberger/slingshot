@@ -8,6 +8,14 @@ import (
 	"strings"
 )
 
+type GitHubProvider struct {
+	Hostname string
+}
+
+var GitHub = GitHubProvider{
+	Hostname: "github.com",
+}
+
 // GitHub SSH key API
 // https://docs.github.com/en/rest/users/keys?apiVersion=2022-11-28
 
@@ -21,7 +29,7 @@ type AddSSHKeyResponseGitHub struct {
 	ReadOnly bool `json:"read_only"`
 }
 
-func AddSSHKeyGitHub(publicKeyBytes []byte, title string, accessToken string) (int, error) {
+func (provider GitHubProvider) AddSSHKey(publicKeyBytes []byte, title string, accessToken string) (int, error) {
 	var keyId int
 	var err error
 

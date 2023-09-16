@@ -8,6 +8,14 @@ import (
 	"strings"
 )
 
+type GitLabProvider struct {
+	Hostname string
+}
+
+var GitLab = GitLabProvider{
+	Hostname: "gitlab.com",
+}
+
 // GitLab SSH key (POST) API (missing from official docs)
 // https://stackoverflow.com/a/38164825
 // https://stackoverflow.com/questions/63551637/how-to-add-ssh-key-to-gitlab-via-api
@@ -21,7 +29,7 @@ type AddSSHKeyResponseGitLab struct {
 	UsageType string `json:"usage_type"`
 }
 
-func AddSSHKeyGitLab(publicKeyBytes []byte, title string, accessToken string) (int, error) {
+func (provider GitLabProvider) AddSSHKey(publicKeyBytes []byte, title string, accessToken string) (int, error) {
 	var keyId int
 	var err error
 
