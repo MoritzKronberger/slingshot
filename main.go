@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"slingshot/core"
 	"slingshot/git"
 	"slingshot/ssh"
 
@@ -18,78 +19,31 @@ func exitOnError(msg string, err error) {
 	}
 }
 
-func testSHH(){
-	// SSH config
+func testSSH(hostname string, user string, password string, knownHostFiles []string){
 	godotenv.Load()
-	host := os.Getenv("REMOTE_HOST")
-	user := os.Getenv("REMOTE_USER")
-	password := os.Getenv("REMOTE_PASSWORD")
-	knownHostFiles := []string{os.Getenv("KNOWN_HOST_FILE")}
 
-	// Generate public and private key
-	privateKeyPath := "./id_rsa"
-	publicKeyPath := "./id_rsa.pub"
-	keyBitSize := 4096
-
-	privateKeyBytes, err := os.ReadFile(privateKeyPath)
-
-	if err != nil {
-		log.Print("Could not find private key, generating new key pair...")
-
-		// Generate private key
-		privateKey, err := ssh.GeneratePrivateKey(keyBitSize)
-		exitOnError("Unable to generate private key:", err)
-
-		// Encode private key as PEM -> get bytes
-		privateKeyBytes = ssh.PrivateKeyToPEM(privateKey)
-
-		// Generate public key
-		publicKey, err := ssh.GeneratePublicKey(privateKey)
-		exitOnError("Unable to generate public key:", err)
-		publicKeyBytes := ssh.PublicKeyToBytes(publicKey)
-
-		// Write key pair to disk
-		ssh.WriteKeyToFile(privateKeyBytes, privateKeyPath)
-		ssh.WriteKeyToFile(publicKeyBytes, publicKeyPath)
-
-		log.Print("Successfully generated new key pair")
-		log.Print("Copying new public key to server...")
-
-		// Create SSH config for connection with password
-		pwdConfig, err := ssh.GetClientPasswordConfig(host, user, password, knownHostFiles...)
-		exitOnError("Unable to create SSH password config:", err)
-
-		// Create SSH session
-		session, conn, err := ssh.GetTCPSession(host, pwdConfig)
-		exitOnError("Unable to create SHH password session:", err)
-		defer conn.Close()
-		defer session.Close()
-
-		// Copy public key to server
-		// From: https://www.educative.io/answers/how-to-add-ssh-key-to-server
-		publicKeyStr := string(publicKeyBytes)
-		cmd := fmt.Sprintf("echo \"%s\" >> .ssh/authorized_keys", publicKeyStr)
-		_, err = ssh.ExecCmd(session, cmd)
-		exitOnError("Unable to copy public key to server:", err)
-
-		log.Print("Successfully copied new public key to server")
+	// Test node
+	node := core.Node{
+		Name: "Test",
+		Hostname: hostname,
+		User: user,
 	}
 
-	// Create SSH client config using public key authentication
-	clientConf, err := ssh.GetClientPublicKeyConfig(host, user, privateKeyBytes, knownHostFiles...)
-	exitOnError("Unable to create public key client config:", err)
+	keyBitSize := 4096
+	slingshotDir := ".slingshot"
 
-	// Create SSH session
-	session, conn, err := ssh.GetTCPSession(host, clientConf)
-	exitOnError("Unable to create public key SSH session:", err)
-	defer conn.Close()
-	defer session.Close()
+	// Initialize SSH connection for node
+	initialized, err := node.InitSSH(password, false, keyBitSize, knownHostFiles, slingshotDir)
+	exitOnError("Unable to init SSH connection:", err)
+	fmt.Println("Init: ", initialized)
 
-	// Execute command
-	res, err := ssh.ExecCmd(session, "echo Hello!")
-	exitOnError("Unable to execute command:", err)
-
-	fmt.Println(res)
+	// Execute SSH command
+	cmds := []string{"echo Hello!"}
+	res, err := node.ExecCmds(cmds, knownHostFiles, slingshotDir)
+	exitOnError("Unable to execute SSH commands:", err)
+	for i, cmd := range cmds {
+		fmt.Printf("$ %s > %s\n", cmd, res[i])
+	}
 }
 
 func testGitProviderSSH(provider git.GitProvider, accessToken string) {
@@ -138,10 +92,16 @@ func testGitProviderSSH(provider git.GitProvider, accessToken string) {
 }
 
 func main() {
-	// Git provider config
 	godotenv.Load()
-	gitHubAccessToken := os.Getenv("GITHUB_ACCESS_TOKEN")
-	// gitLabAccessToken := os.Getenv("GITLAB_ACCESS_TOKEN")
 
+	// Test SSH
+	hostname := os.Getenv("REMOTE_HOST")
+	user := os.Getenv("REMOTE_USER")
+	password := os.Getenv("REMOTE_PASSWORD")
+	knownHostFiles := []string{os.Getenv("KNOWN_HOST_FILE")}
+	testSSH(hostname, user, password, knownHostFiles)
+
+	// Test git provider
+	gitHubAccessToken := os.Getenv("GITHUB_ACCESS_TOKEN")
 	testGitProviderSSH(git.GitHub, gitHubAccessToken)
 }
